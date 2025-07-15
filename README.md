@@ -36,8 +36,8 @@
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/ваш-username/big-magazine.git
-   cd big-magazine
+   git clone https://github.com/Sergey-Pashkov/django-product-filter-system-21.git
+   cd django-product-filter-system-21
    ```
 
 2. **Создайте виртуальное окружение:**
