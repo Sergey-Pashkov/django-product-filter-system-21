@@ -1,0 +1,12 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Фильтр продуктов{% endblock %}
+
+{% block content %}
+<h2>Популярные товары</h2>
+<ul>
+    {% for product in products %}
+        <li>{{ product.name }} - Заказан: {{ product.order_count }} раз</li>
+    {% endfor %}
+</ul>
+{% endblock %}

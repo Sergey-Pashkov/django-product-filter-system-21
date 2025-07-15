@@ -1,0 +1,12 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Заказы за последние 30 дней{% endblock %}
+
+{% block content %}
+<h2>Пользователи с заказами за последние 30 дней</h2>
+<ul>
+    {% for user in users %}
+        <li>{{ user.username }} - Заказов: {{ user.recent_order_count }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Фильтр продуктов{% endblock %}
+
+{% block content %}
+<h2>Фильтр и сортировка товаров</h2>
+<form method="GET">
+    <select name="category">
+        <option value="">Все категории</option>
+        <option value="electronics">Электроника</option>
+        <option value="clothing">Одежда</option>
+        <option value="domestic">бытовой товар</option>
+        <!-- Добавьте другие категории -->
+    </select>
+    <input type="number" name="min_price" placeholder="Мин. цена">
+    <input type="number" name="max_price" placeholder="Макс. цена">
+    
+    <select name="sort">
+        <option value="-order_count">По популярности</option>
+        <option value="price">Цена (по возрастанию)</option>
+        <option value="-price">Цена (по убыванию)</option>
+    </select>
+    
+    <button type="submit">Применить</button>
+</form>
+
+<h2>Список товаров</h2>
+<ul>
+    {% for product in products %}
+        <li>{{ product.name }} - Заказан: {{ product.order_count }} раз - Цена: {{ product.price }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

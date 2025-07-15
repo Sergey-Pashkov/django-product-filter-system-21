@@ -1,0 +1,192 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Каталог товаров{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковая панель с фильтрами -->
+    <div class="col-lg-3 col-md-4">
+        <div class="filter-form">
+            <h5 class="mb-3">
+                <i class="fas fa-filter"></i> Фильтры
+            </h5>
+            
+            <form id="filter-form" method="get">
+                <!-- Фильтр по категории -->
+                <div class="mb-3">
+                    <label for="category" class="form-label">Категория:</label>
+                    <select class="form-select" name="category" id="category">
+                        <option value="">Все категории</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if current_filters.category == cat %}selected{% endif %}>
+                                {{ cat }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Фильтр по цене -->
+                <div class="mb-3">
+                    <label class="form-label">Цена:</label>
+                    <div class="row">
+                        <div class="col-6">
+                            <input type="number" class="form-control" name="min_price" 
+                                   placeholder="От" value="{{ current_filters.min_price }}" step="0.01">
+                        </div>
+                        <div class="col-6">
+                            <input type="number" class="form-control" name="max_price" 
+                                   placeholder="До" value="{{ current_filters.max_price }}" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Кнопки управления фильтрами -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Применить
+                    </button>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Сбросить
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Индикатор загрузки -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2">Загрузка товаров...</p>
+        </div>
+        
+        <!-- Статистика (загружается через AJAX) -->
+        <div class="filter-sidebar mt-3">
+            <h6><i class="fas fa-chart-bar"></i> Статистика</h6>
+            <div id="stats-content">
+                <p class="text-muted">Загрузка...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Основная область с товарами -->
+    <div class="col-lg-9 col-md-8">
+        <!-- Панель сортировки -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>
+                Товары 
+                <span class="badge bg-secondary" id="total-count">{{ total_count }}</span>
+            </h4>
+            
+            <div class="sort-buttons">
+                <small class="text-muted me-2">Сортировка:</small>
+                <button class="btn btn-sm btn-outline-primary sort-btn" data-sort="popularity">
+                    <i class="fas fa-fire"></i> Популярность
+                </button>
+                <button class="btn btn-sm btn-outline-primary sort-btn" data-sort="price_asc">
+                    <i class="fas fa-sort-amount-up"></i> Цена ↑
+                </button>
+                <button class="btn btn-sm btn-outline-primary sort-btn" data-sort="price_desc">
+                    <i class="fas fa-sort-amount-down"></i> Цена ↓
+                </button>
+                <button class="btn btn-sm btn-outline-primary sort-btn" data-sort="date_desc">
+                    <i class="fas fa-calendar"></i> Новые
+                </button>
+            </div>
+        </div>
+        
+        <!-- Контейнер для товаров (обновляется через AJAX) -->
+        <div id="products-container">
+            {% include 'shop/product_list_ajax.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // AJAX обработка формы фильтров
+    $('#filter-form').on('submit', function(e) {
+        e.preventDefault();
+        loadProducts();
+    });
+    
+    // Обработка кнопок сортировки
+    $('.sort-btn').on('click', function() {
+        // Обновляем активную кнопку
+        $('.sort-btn').removeClass('btn-primary').addClass('btn-outline-primary');
+        $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+        
+        // Добавляем параметр сортировки к форме
+        var sortValue = $(this).data('sort');
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'sort',
+            value: sortValue
+        }).appendTo('#filter-form');
+        
+        loadProducts();
+    });
+    
+    // Функция загрузки товаров через AJAX
+    function loadProducts() {
+        $('#loading').show();
+        $('#products-container').hide();
+        
+        $.ajax({
+            url: '{% url "product_filter" %}',
+            type: 'GET',
+            data: $('#filter-form').serialize(),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                $('#products-container').html(response.html).fadeIn();
+                $('#total-count').text(response.total_count);
+                $('#loading').hide();
+                
+                // Удаляем скрытые поля сортировки
+                $('input[name="sort"]').remove();
+            },
+            error: function() {
+                $('#loading').hide();
+                alert('Ошибка загрузки товаров. Попробуйте еще раз.');
+            }
+        });
+    }
+    
+    // Загрузка статистики
+    function loadStats() {
+        $.ajax({
+            url: '{% url "product_stats" %}',
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                var statsHtml = '<p><strong>Всего товаров:</strong> ' + response.total_products + '</p>';
+                
+                if (response.popular_products.length > 0) {
+                    statsHtml += '<h6 class="mt-3">Топ-3 товара:</h6>';
+                    statsHtml += '<ul class="list-unstyled">';
+                    response.popular_products.slice(0, 3).forEach(function(product) {
+                        statsHtml += '<li class="small">• ' + product.name + ' (' + product.order_count + ' заказов)</li>';
+                    });
+                    statsHtml += '</ul>';
+                }
+                
+                $('#stats-content').html(statsHtml);
+            }
+        });
+    }
+    
+    // Загружаем статистику при загрузке страницы
+    loadStats();
+    
+    // Устанавливаем активную кнопку сортировки
+    var currentSort = '{{ current_filters.sort }}' || 'popularity';
+    $('.sort-btn[data-sort="' + currentSort + '"]').removeClass('btn-outline-primary').addClass('btn-primary');
+});
+</script>
+{% endblock %}

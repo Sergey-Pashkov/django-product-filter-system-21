@@ -1,0 +1,77 @@
+<!-- Шаблон для AJAX-загрузки товаров (product_list_ajax.html) -->
+<div class="row">
+    {% for product in products %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card product-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">
+                    <strong>Категория:</strong> {{ product.category }}<br>
+                    <strong>Цена:</strong> 
+                    <span class="text-success fw-bold">{{ product.price }} ₽</span><br>
+                    <strong>Добавлен:</strong> {{ product.created_at|date:"d.m.Y" }}<br>
+                    <strong>Популярность:</strong> 
+                    <span class="badge bg-info">{{ product.order_count }} заказов</span>
+                </p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <button class="btn btn-primary btn-sm">
+                    <i class="fas fa-cart-plus"></i> В корзину
+                </button>
+                <button class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-eye"></i> Подробнее
+                </button>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="fas fa-search fa-2x mb-3"></i>
+            <h5>Товары не найдены</h5>
+            <p>Попробуйте изменить параметры фильтрации или сбросить фильтры.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Пагинация -->
+{% if products.has_other_pages %}
+<nav aria-label="Пагинация товаров">
+    <ul class="pagination justify-content-center">
+        {% if products.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ products.previous_page_number }}">
+                    <i class="fas fa-chevron-left"></i> Предыдущая
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for num in products.paginator.page_range %}
+            {% if products.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ products.next_page_number }}">
+                    Следующая <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<div class="text-center text-muted mt-3">
+    <small>
+        Показано {{ products.start_index }}–{{ products.end_index }} из {{ products.paginator.count }} товаров
+    </small>
+</div>
+{% endif %}
